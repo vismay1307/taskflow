@@ -5,7 +5,7 @@ node_modules/
 .env
 .env.*
 !.env.example
-
+.atlascred
 # Build
 dist/
 build/
