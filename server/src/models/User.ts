@@ -1,20 +1,35 @@
 import mongoose, { Document, Schema } from "mongoose";
 
 export interface IUser extends Document {
-  name: string;
+  firstName: string;
+  lastName?: string;
   email: string;
   password: string;
+
+  emailVerified: boolean;
+  emailVerificationOtp?: string;
+  emailVerificationOtpExpires?: Date;
+
+  passwordResetOtp?: string;
+  passwordResetOtpExpires?: Date;
+
   createdAt: Date;
   updatedAt: Date;
 }
 
 const userSchema = new Schema<IUser>(
   {
-    name: {
+    firstName: {
       type: String,
       required: true,
       trim: true,
       minlength: 2,
+      maxlength: 50,
+    },
+
+    lastName: {
+      type: String,
+      trim: true,
       maxlength: 50,
     },
 
@@ -32,12 +47,35 @@ const userSchema = new Schema<IUser>(
       minlength: 6,
       select: false,
     },
+
+    emailVerified: {
+      type: Boolean,
+      default: false,
+    },
+
+    emailVerificationOtp: {
+      type: String,
+      select: false,
+    },
+
+    emailVerificationOtpExpires: {
+      type: Date,
+      select: false,
+    },
+
+    passwordResetOtp: {
+      type: String,
+      select: false,
+    },
+
+    passwordResetOtpExpires: {
+      type: Date,
+      select: false,
+    },
   },
   {
     timestamps: true,
   }
 );
 
-const User = mongoose.model<IUser>("User", userSchema);
-
-export default User;
+export default mongoose.model<IUser>("User", userSchema);

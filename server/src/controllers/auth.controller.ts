@@ -1,194 +1,339 @@
-import { Request, Response } from "express";
-import bcrypt from "bcrypt";
-import User from "../models/User.js";
-import { AuthRequest } from "../middleware/auth.middleware.js";
-import { generateToken } from "../utils/jwt.js";
+import {
+  Request,
+  Response,
+} from "express";
+
+import {
+  signupUser,
+  verifyEmail,
+  loginUser,
+  getCurrentUser,
+  forgotPassword,
+  verifyResetOtp,
+  resetPassword,
+} from "../services/auth.service.js";
+
+import {
+  AuthRequest,
+} from "../middleware/auth.middleware.js";
 
 
-// =========================
+// ==========================================
 // SIGNUP
-// =========================
+// ==========================================
 
 export const signup = async (
   req: Request,
   res: Response
 ) => {
+
   try {
-    const { name, email, password } = req.body;
 
-    // Basic validation
-    if (!name || !email || !password) {
+    const {
+      firstName,
+      lastName,
+      email,
+      password,
+      confirmPassword,
+    } = req.body;
+
+    if (
+      !firstName ||
+      !email ||
+      !password ||
+      !confirmPassword
+    ) {
       return res.status(400).json({
         success: false,
-        message: "Name, email and password are required",
+        message:
+          "First name, email, password and confirm password are required",
       });
     }
 
-    if (password.length < 6) {
-      return res.status(400).json({
-        success: false,
-        message: "Password must be at least 6 characters",
-      });
-    }
-
-    // Check existing user
-    const existingUser = await User.findOne({
-      email: email.toLowerCase(),
-    });
-
-    if (existingUser) {
-      return res.status(409).json({
-        success: false,
-        message: "User already exists",
-      });
-    }
-
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 12);
-
-    // Create user
-    const user = await User.create({
-      name,
-      email: email.toLowerCase(),
-      password: hashedPassword,
-    });
-
-    // Generate JWT
-    const token = generateToken(user._id.toString());
+    const result =
+      await signupUser(
+        firstName,
+        lastName,
+        email,
+        password,
+        confirmPassword
+      );
 
     return res.status(201).json({
       success: true,
-      message: "User registered successfully",
-
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-      },
-
-      token,
+      ...result,
     });
-  } catch (error) {
-    console.error("Signup error:", error);
 
-    return res.status(500).json({
+  } catch (error: any) {
+
+    return res.status(400).json({
       success: false,
-      message: "Internal server error",
+      message: error.message,
     });
   }
 };
 
 
-// =========================
+// ==========================================
+// VERIFY EMAIL
+// ==========================================
+
+export const verifyEmailController =
+  async (
+    req: Request,
+    res: Response
+  ) => {
+
+    try {
+
+      const {
+        email,
+        otp,
+      } = req.body;
+
+      if (!email || !otp) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Email and OTP are required",
+        });
+      }
+
+      const result =
+        await verifyEmail(
+          email,
+          otp
+        );
+
+      return res.status(200).json({
+        success: true,
+        message:
+          "Email verified successfully",
+        ...result,
+      });
+
+    } catch (error: any) {
+
+      return res.status(400).json({
+        success: false,
+        message: error.message,
+      });
+    }
+  };
+
+
+// ==========================================
 // LOGIN
-// =========================
+// ==========================================
 
 export const login = async (
   req: Request,
   res: Response
 ) => {
+
   try {
-    const { email, password } = req.body;
+
+    const {
+      email,
+      password,
+    } = req.body;
 
     if (!email || !password) {
       return res.status(400).json({
         success: false,
-        message: "Email and password are required",
+        message:
+          "Email and password are required",
       });
     }
 
-    // Password normally hidden because select:false
-    const user = await User.findOne({
-      email: email.toLowerCase(),
-    }).select("+password");
-
-    if (!user) {
-      return res.status(401).json({
-        success: false,
-        message: "Invalid email or password",
-      });
-    }
-
-    // Compare password
-    const isPasswordValid = await bcrypt.compare(
-      password,
-      user.password
-    );
-
-    if (!isPasswordValid) {
-      return res.status(401).json({
-        success: false,
-        message: "Invalid email or password",
-      });
-    }
-
-    // Generate JWT
-    const token = generateToken(user._id.toString());
+    const result =
+      await loginUser(
+        email,
+        password
+      );
 
     return res.status(200).json({
       success: true,
       message: "Login successful",
-
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-      },
-
-      token,
+      ...result,
     });
-  } catch (error) {
-    console.error("Login error:", error);
 
-    return res.status(500).json({
+  } catch (error: any) {
+
+    return res.status(401).json({
       success: false,
-      message: "Internal server error",
+      message: error.message,
     });
   }
 };
 
 
-// =========================
-// GET CURRENT USER
-// =========================
+// ==========================================
+// GET ME
+// ==========================================
 
 export const getMe = async (
   req: AuthRequest,
   res: Response
 ) => {
+
   try {
-    const userId = req.user?.userId;
 
-    if (!userId) {
-      return res.status(401).json({
-        success: false,
-        message: "Unauthorized",
-      });
-    }
-
-    const user = await User.findById(userId).select("-password");
-
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found",
-      });
-    }
+    const user =
+      await getCurrentUser(
+        req.user!.userId
+      );
 
     return res.status(200).json({
       success: true,
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-      },
+      user,
     });
-  } catch (error) {
-    console.error("Get me error:", error);
 
-    return res.status(500).json({
+  } catch (error: any) {
+
+    return res.status(404).json({
       success: false,
-      message: "Internal server error",
+      message: error.message,
     });
   }
 };
+
+
+// ==========================================
+// FORGOT PASSWORD
+// ==========================================
+
+export const forgotPasswordController =
+  async (
+    req: Request,
+    res: Response
+  ) => {
+
+    try {
+
+      const { email } = req.body;
+
+      if (!email) {
+        return res.status(400).json({
+          success: false,
+          message: "Email is required",
+        });
+      }
+
+      const result =
+        await forgotPassword(email);
+
+      return res.status(200).json({
+        success: true,
+        ...result,
+      });
+
+    } catch (error: any) {
+
+      return res.status(400).json({
+        success: false,
+        message: error.message,
+      });
+    }
+  };
+
+
+// ==========================================
+// VERIFY RESET OTP
+// ==========================================
+
+export const verifyResetOtpController =
+  async (
+    req: Request,
+    res: Response
+  ) => {
+
+    try {
+
+      const {
+        email,
+        otp,
+      } = req.body;
+
+      if (!email || !otp) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Email and OTP are required",
+        });
+      }
+
+      const result =
+        await verifyResetOtp(
+          email,
+          otp
+        );
+
+      return res.status(200).json({
+        success: true,
+        ...result,
+      });
+
+    } catch (error: any) {
+
+      return res.status(400).json({
+        success: false,
+        message: error.message,
+      });
+    }
+  };
+
+
+// ==========================================
+// RESET PASSWORD
+// ==========================================
+
+export const resetPasswordController =
+  async (
+    req: Request,
+    res: Response
+  ) => {
+
+    try {
+
+      const {
+        email,
+        otp,
+        newPassword,
+        confirmPassword,
+      } = req.body;
+
+      if (
+        !email ||
+        !otp ||
+        !newPassword ||
+        !confirmPassword
+      ) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Email, OTP, new password and confirm password are required",
+        });
+      }
+
+      const result =
+        await resetPassword(
+          email,
+          otp,
+          newPassword,
+          confirmPassword
+        );
+
+      return res.status(200).json({
+        success: true,
+        ...result,
+      });
+
+    } catch (error: any) {
+
+      return res.status(400).json({
+        success: false,
+        message: error.message,
+      });
+    }
+  };

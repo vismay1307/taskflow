@@ -28,6 +28,4 @@ const boardSchema = new Schema<IBoard>(
   }
 );
 
-const Board = mongoose.model<IBoard>("Board", boardSchema);
-
-export default Board;
+export default mongoose.model<IBoard>("Board", boardSchema);
