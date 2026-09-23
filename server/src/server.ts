@@ -4,7 +4,7 @@ import { createServer } from "http";
 
 import { connectDB } from "./config/db.js";
 import { initializeSocket } from "./config/socket.js";
-
+import cors from "cors";
 import authRoutes from "./routes/auth.routes.js";
 import boardRoutes from "./routes/board.routes.js";
 import taskRoutes from "./routes/task.routes.js";
@@ -31,7 +31,11 @@ connectDB();
 app.use("/api/auth", authRoutes);
 app.use("/api/boards", boardRoutes);
 app.use("/api/tasks", taskRoutes);
-
+app.use(
+  cors({
+    origin: "http://localhost:3000",
+  })
+);
 app.get("/", (_req, res) => {
   res.json({
     success: true,
