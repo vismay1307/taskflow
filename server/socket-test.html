@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>TaskFlow Socket Test</title>
+</head>
+
+<body>
+
+  <h1>TaskFlow Socket Test</h1>
+
+  <input
+    id="boardId"
+    type="text"
+    placeholder="Enter Board ID"
+  />
+
+  <button id="joinButton">
+    Join Board
+  </button>
+
+  <h3>Events</h3>
+
+  <pre id="events"></pre>
+
+  <!-- Load Socket.io client directly from our server -->
+  <script src="http://localhost:5000/socket.io/socket.io.js"></script>
+
+  <script>
+    // Connect to TaskFlow Socket.io server
+    const socket = io("http://localhost:5000");
+
+    const events = document.getElementById("events");
+    const joinButton = document.getElementById("joinButton");
+    const boardInput = document.getElementById("boardId");
+
+    // Socket connected
+    socket.on("connect", () => {
+      addEvent(`Connected: ${socket.id}`);
+    });
+
+    // Socket connection error
+    socket.on("connect_error", (error) => {
+      addEvent(`Connection error: ${error.message}`);
+    });
+
+    // Join board
+    joinButton.addEventListener("click", () => {
+      const boardId = boardInput.value.trim();
+
+      if (!boardId) {
+        addEvent("Please enter a Board ID");
+        return;
+      }
+
+      socket.emit("join-board", boardId);
+
+      addEvent(`Joined board: ${boardId}`);
+    });
+
+    // Task created
+    socket.on("task:created", (task) => {
+      addEvent(
+        "task:created\n" +
+        JSON.stringify(task, null, 2)
+      );
+    });
+
+    // Task updated
+    socket.on("task:updated", (task) => {
+      addEvent(
+        "task:updated\n" +
+        JSON.stringify(task, null, 2)
+      );
+    });
+
+    // Task moved
+    socket.on("task:moved", (task) => {
+      addEvent(
+        "task:moved\n" +
+        JSON.stringify(task, null, 2)
+      );
+    });
+
+    // Task deleted
+    socket.on("task:deleted", (data) => {
+      addEvent(
+        "task:deleted\n" +
+        JSON.stringify(data, null, 2)
+      );
+    });
+
+    function addEvent(message) {
+      events.textContent += message + "\n\n";
+    }
+  </script>
+
+</body>
+</html>
