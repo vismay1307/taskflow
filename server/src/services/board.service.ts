@@ -173,3 +173,27 @@ export const deleteTask = async (
     message: "Task deleted successfully",
   };
 };
+
+// GET TASKS FOR BOARD
+export const getTasksByBoard = async (
+  boardId: string,
+  ownerId: string
+) => {
+  const board = await Board.findOne({
+    _id: boardId,
+    owner: ownerId,
+  });
+
+  if (!board) {
+    throw new Error("Board not found");
+  }
+
+  const tasks = await Task.find({
+    boardId: board._id,
+  }).sort({
+    order: 1,
+    createdAt: 1,
+  });
+
+  return tasks;
+};

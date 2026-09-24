@@ -7,7 +7,7 @@ import {
   getBoards,
   getBoardById,
   createTask,
-  updateTask,
+  updateTask,getTasksByBoard,
   deleteTask,
 } from "../services/board.service.js";
 
@@ -185,3 +185,26 @@ export const deleteTaskController = async (
     });
   }
 };  
+
+// GET /api/boards/:id/tasks
+export const getTasksController = async (
+  req: AuthRequest,
+  res: Response
+) => {
+  try {
+    const tasks = await getTasksByBoard(
+      String(req.params.id),
+      req.user!.userId
+    );
+
+    return res.status(200).json({
+      success: true,
+      tasks,
+    });
+  } catch (error: any) {
+    return res.status(404).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};

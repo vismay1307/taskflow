@@ -8,7 +8,7 @@ import {
   getBoardController,
   createTaskController,
   updateTaskController,
-  deleteTaskController,
+  deleteTaskController,getTasksController,
 } from "../controllers/board.controller.js";
 
 const router = Router();
@@ -22,5 +22,8 @@ router.get("/:id", getBoardController);
 
 // TASK
 router.post("/:id/tasks", createTaskController);
-
+router.get(
+  "/:id/tasks",
+  getTasksController
+);
 export default router;
